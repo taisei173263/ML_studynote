@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>README.md</title>
+<meta http-equiv="Content-type" content="text/html;charset=UTF-8">
+
+<style>
+/* https://github.com/microsoft/vscode/blob/master/extensions/markdown-language-features/media/markdown.css */
+/*---------------------------------------------------------------------------------------------
+ *  Copyright (c) Microsoft Corporation. All rights reserved.
+ *  Licensed under the MIT License. See License.txt in the project root for license information.
+ *--------------------------------------------------------------------------------------------*/
+
+body {
+	font-family: var(--vscode-markdown-font-family, -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif);
+	font-size: var(--vscode-markdown-font-size, 14px);
+	padding: 0 26px;
+	line-height: var(--vscode-markdown-line-height, 22px);
+	word-wrap: break-word;
+}
+
+#code-csp-warning {
+	position: fixed;
+	top: 0;
+	right: 0;
+	color: white;
+	margin: 16px;
+	text-align: center;
+	font-size: 12px;
+	font-family: sans-serif;
+	background-color:#444444;
+	cursor: pointer;
+	padding: 6px;
+	box-shadow: 1px 1px 1px rgba(0,0,0,.25);
+}
+
+#code-csp-warning:hover {
+	text-decoration: none;
+	background-color:#007acc;
+	box-shadow: 2px 2px 2px rgba(0,0,0,.25);
+}
+
+body.scrollBeyondLastLine {
+	margin-bottom: calc(100vh - 22px);
+}
+
+body.showEditorSelection .code-line {
+	position: relative;
+}
+
+body.showEditorSelection .code-active-line:before,
+body.showEditorSelection .code-line:hover:before {
+	content: "";
+	display: block;
+	position: absolute;
+	top: 0;
+	left: -12px;
+	height: 100%;
+}
+
+body.showEditorSelection li.code-active-line:before,
+body.showEditorSelection li.code-line:hover:before {
+	left: -30px;
+}
+
+.vscode-light.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.15);
+}
+
+.vscode-light.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(0, 0, 0, 0.40);
+}
+
+.vscode-light.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-dark.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.4);
+}
+
+.vscode-dark.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 255, 255, 0.60);
+}
+
+.vscode-dark.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+.vscode-high-contrast.showEditorSelection .code-active-line:before {
+	border-left: 3px solid rgba(255, 160, 0, 0.7);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line:hover:before {
+	border-left: 3px solid rgba(255, 160, 0, 1);
+}
+
+.vscode-high-contrast.showEditorSelection .code-line .code-line:hover:before {
+	border-left: none;
+}
+
+img {
+	max-width: 100%;
+	max-height: 100%;
+}
+
+a {
+	text-decoration: none;
+}
+
+a:hover {
+	text-decoration: underline;
+}
+
+a:focus,
+input:focus,
+select:focus,
+textarea:focus {
+	outline: 1px solid -webkit-focus-ring-color;
+	outline-offset: -1px;
+}
+
+hr {
+	border: 0;
+	height: 2px;
+	border-bottom: 2px solid;
+}
+
+h1 {
+	padding-bottom: 0.3em;
+	line-height: 1.2;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+}
+
+h1, h2, h3 {
+	font-weight: normal;
+}
+
+table {
+	border-collapse: collapse;
+}
+
+table > thead > tr > th {
+	text-align: left;
+	border-bottom: 1px solid;
+}
+
+table > thead > tr > th,
+table > thead > tr > td,
+table > tbody > tr > th,
+table > tbody > tr > td {
+	padding: 5px 10px;
+}
+
+table > tbody > tr + tr > td {
+	border-top: 1px solid;
+}
+
+blockquote {
+	margin: 0 7px 0 5px;
+	padding: 0 16px 0 10px;
+	border-left-width: 5px;
+	border-left-style: solid;
+}
+
+code {
+	font-family: Menlo, Monaco, Consolas, "Droid Sans Mono", "Courier New", monospace, "Droid Sans Fallback";
+	font-size: 1em;
+	line-height: 1.357em;
+}
+
+body.wordWrap pre {
+	white-space: pre-wrap;
+}
+
+pre:not(.hljs),
+pre.hljs code > div {
+	padding: 16px;
+	border-radius: 3px;
+	overflow: auto;
+}
+
+pre code {
+	color: var(--vscode-editor-foreground);
+	tab-size: 4;
+}
+
+/** Theming */
+
+.vscode-light pre {
+	background-color: rgba(220, 220, 220, 0.4);
+}
+
+.vscode-dark pre {
+	background-color: rgba(10, 10, 10, 0.4);
+}
+
+.vscode-high-contrast pre {
+	background-color: rgb(0, 0, 0);
+}
+
+.vscode-high-contrast h1 {
+	border-color: rgb(0, 0, 0);
+}
+
+.vscode-light table > thead > tr > th {
+	border-color: rgba(0, 0, 0, 0.69);
+}
+
+.vscode-dark table > thead > tr > th {
+	border-color: rgba(255, 255, 255, 0.69);
+}
+
+.vscode-light h1,
+.vscode-light hr,
+.vscode-light table > tbody > tr + tr > td {
+	border-color: rgba(0, 0, 0, 0.18);
+}
+
+.vscode-dark h1,
+.vscode-dark hr,
+.vscode-dark table > tbody > tr + tr > td {
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+</style>
+
+<style>
+/* Tomorrow Theme */
+/* http://jmblog.github.com/color-themes-for-google-code-highlightjs */
+/* Original theme - https://github.com/chriskempson/tomorrow-theme */
+
+/* Tomorrow Comment */
+.hljs-comment,
+.hljs-quote {
+	color: #8e908c;
+}
+
+/* Tomorrow Red */
+.hljs-variable,
+.hljs-template-variable,
+.hljs-tag,
+.hljs-name,
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-regexp,
+.hljs-deletion {
+	color: #c82829;
+}
+
+/* Tomorrow Orange */
+.hljs-number,
+.hljs-built_in,
+.hljs-builtin-name,
+.hljs-literal,
+.hljs-type,
+.hljs-params,
+.hljs-meta,
+.hljs-link {
+	color: #f5871f;
+}
+
+/* Tomorrow Yellow */
+.hljs-attribute {
+	color: #eab700;
+}
+
+/* Tomorrow Green */
+.hljs-string,
+.hljs-symbol,
+.hljs-bullet,
+.hljs-addition {
+	color: #718c00;
+}
+
+/* Tomorrow Blue */
+.hljs-title,
+.hljs-section {
+	color: #4271ae;
+}
+
+/* Tomorrow Purple */
+.hljs-keyword,
+.hljs-selector-tag {
+	color: #8959a8;
+}
+
+.hljs {
+	display: block;
+	overflow-x: auto;
+	color: #4d4d4c;
+	padding: 0.5em;
+}
+
+.hljs-emphasis {
+	font-style: italic;
+}
+
+.hljs-strong {
+	font-weight: bold;
+}
+</style>
+
+<style>
+/*
+ * Markdown PDF CSS
+ */
+
+ body {
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe WPC", "Segoe UI", "Ubuntu", "Droid Sans", sans-serif, "Meiryo";
+	padding: 0 12px;
+}
+
+pre {
+	background-color: #f8f8f8;
+	border: 1px solid #cccccc;
+	border-radius: 3px;
+	overflow-x: auto;
+	white-space: pre-wrap;
+	overflow-wrap: break-word;
+}
+
+pre:not(.hljs) {
+	padding: 23px;
+	line-height: 19px;
+}
+
+blockquote {
+	background: rgba(127, 127, 127, 0.1);
+	border-color: rgba(0, 122, 204, 0.5);
+}
+
+.emoji {
+	height: 1.4em;
+}
+
+code {
+	font-size: 14px;
+	line-height: 19px;
+}
+
+/* for inline code */
+:not(pre):not(.hljs) > code {
+	color: #C9AE75; /* Change the old color so it seems less like an error */
+	font-size: inherit;
+}
+
+/* Page Break : use <div class="page"/> to insert page break
+-------------------------------------------------------- */
+.page {
+	page-break-after: always;
+}
+
+</style>
+
+<script src="https://unpkg.com/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.body.classList.contains('vscode-dark') || document.body.classList.contains('vscode-high-contrast')
+          ? 'dark'
+          : 'default'
+    });
+  </script>
+<hr>
+<p>​</p>
+<ul>
+<li><a href="#%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97">セットアップ</a>
+<ul>
+<li><a href="#%E3%83%AD%E3%83%BC%E3%82%AB%E3%83%AB%E9%96%8B%E7%99%BA%E7%92%B0%E5%A2%83">ローカル開発環境</a>
+<ul>
+<li><a href="#python%E3%81%AE%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3">Pythonのバージョン</a></li>
+<li><a href="#vscode">VSCode</a>
+<ul>
+<li><a href="#extension">Extension</a></li>
+<li><a href="#%E3%82%B9%E3%83%8B%E3%83%9A%E3%83%83%E3%83%88%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%9F%E3%83%98%E3%83%83%E3%83%80%E3%83%BC%E3%81%AE%E6%8C%BF%E5%85%A5">スニペットを使ったヘッダーの挿入</a></li>
+</ul>
+</li>
+<li><a href="#%E3%83%AA%E3%83%B3%E3%82%BF%E3%83%95%E3%82%A9%E3%83%BC%E3%83%9E%E3%83%83%E3%82%BF">リンタ・フォーマッタ</a></li>
+<li><a href="#git">Git</a></li>
+</ul>
+</li>
+<li><a href="#aws%E3%81%A8codecommit">AWSとCodeCommit</a>
+<ul>
+<li><a href="#git-for-macos-%E3%83%AA%E3%83%9D%E3%82%B8%E3%83%88%E3%83%AA%E3%81%B8%E3%81%AE%E3%82%A2%E3%82%AF%E3%82%BB%E3%82%B9%E3%81%8C%E6%8B%92%E5%90%A6%E3%81%95%E3%82%8C%E3%82%8B%E5%A0%B4%E5%90%88403">Git for macOS: リポジトリへのアクセスが拒否される場合(403)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#%E3%82%B3%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%83%AB%E3%83%BC%E3%83%AB">コーディングルール</a>
+<ul>
+<li><a href="#docstring">Docstring</a></li>
+<li><a href="#typehints">TypeHints</a>
+<ul>
+<li><a href="#typehints%E3%81%AE%E6%B3%A8%E6%84%8F%E7%82%B9">TypeHintsの注意点</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#todo">TODO</a></li>
+</ul>
+<h1 id="%E3%82%BB%E3%83%83%E3%83%88%E3%82%A2%E3%83%83%E3%83%97">セットアップ</h1>
+<p>​</p>
+<h2 id="%E3%83%AD%E3%83%BC%E3%82%AB%E3%83%AB%E9%96%8B%E7%99%BA%E7%92%B0%E5%A2%83">ローカル開発環境</h2>
+<h3 id="python%E3%81%AE%E3%83%90%E3%83%BC%E3%82%B8%E3%83%A7%E3%83%B3">Pythonのバージョン</h3>
+<p>Python &gt;= 3.9.1
+​</p>
+<h3 id="vscode">VSCode</h3>
+<p>​
+こだわりがなければ<a href="https://code.visualstudio.com/download">VSCode</a>を推奨します。
+​</p>
+<h4 id="extension">Extension</h4>
+<p>​
+以下のExtensionの追加を推奨します。
+各拡張機能のIDが記されているので、Extensionの検索窓で調べてください。
+​</p>
+<table>
+<thead>
+<tr>
+<th>Extension</th>
+<th>Extension ID</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>black</td>
+<td>ms-python.black-formatter</td>
+</tr>
+<tr>
+<td>flake8</td>
+<td>ms-python.flake8</td>
+</tr>
+<tr>
+<td>isort</td>
+<td>ms-python.isort</td>
+</tr>
+<tr>
+<td>Trailing Spaces</td>
+<td>shardulm94.trailing-spaces</td>
+</tr>
+<tr>
+<td>Path Autocomplete</td>
+<td>ionutvmi.path-autocomplete</td>
+</tr>
+<tr>
+<td>Python</td>
+<td>ms-python.python</td>
+</tr>
+<tr>
+<td>Pylance</td>
+<td>ms-python.vscode-pylance</td>
+</tr>
+<tr>
+<td>autoDocstring</td>
+<td>njpwerner.autodocstring</td>
+</tr>
+</tbody>
+</table>
+<p>​</p>
+<h4 id="%E3%82%B9%E3%83%8B%E3%83%9A%E3%83%83%E3%83%88%E3%82%92%E4%BD%BF%E3%81%A3%E3%81%9F%E3%83%98%E3%83%83%E3%83%80%E3%83%BC%E3%81%AE%E6%8C%BF%E5%85%A5">スニペットを使ったヘッダーの挿入</h4>
+<p>​
+<a href="https://code.visualstudio.com/docs/editor/userdefinedsnippets#_builtin-snippets">VSCocdeのスニペット機能</a>を使用してヘッダーが挿入されるよう設定する。
+​</p>
+<ol>
+<li>VSCodeを開く</li>
+<li>左上のCode→基本設定→ユーザースニペットの構成</li>
+<li>pythonと入力しエンター</li>
+<li>以下のauthor, contactを修正し、python.jsonに貼り付ける<pre class="hljs"><code><div>{
+    <span class="hljs-attr">"HEADER"</span>: {
+        <span class="hljs-attr">"prefix"</span>: <span class="hljs-string">"header"</span>,
+        <span class="hljs-attr">"body"</span>: [
+            <span class="hljs-string">"##"</span>,
+            <span class="hljs-string">"# @file    :   $TM_FILENAME"</span>,
+            <span class="hljs-string">"#"</span>,
+            <span class="hljs-string">"# @brief   :   None"</span>,
+            <span class="hljs-string">"#"</span>,
+            <span class="hljs-string">"# @author  :   Tanaka Taro"</span>,
+            <span class="hljs-string">"# @contact :   t.tanaka@walc.co.jp"</span>,
+            <span class="hljs-string">"# @date    :   $CURRENT_YEAR/$CURRENT_MONTH/$CURRENT_DATE"</span>,
+            <span class="hljs-string">"#"</span>,
+            <span class="hljs-string">"# (C)Copyright $CURRENT_YEAR, WALC Inc."</span>,
+            <span class="hljs-string">"$0"</span>,
+        ],
+    }
+}
+</div></code></pre>
+</li>
+</ol>
+<p>​</p>
+<h3 id="%E3%83%AA%E3%83%B3%E3%82%BF%E3%83%BB%E3%83%95%E3%82%A9%E3%83%BC%E3%83%9E%E3%83%83%E3%82%BF">リンタ・フォーマッタ</h3>
+<p>​
+可読性の高いコードを記述する際に、PEP8に準拠したコードを書くことが要求されます。
+自動でコードを整形してくれるFormatter(black)と、文法のチェックを行ってくれるLinter(flake8)をセットアップしましょう。
+​</p>
+<ul>
+<li>VSCodeへのセットアップ
+​
+<ul>
+<li>command + shift + p でコマンドパレットを開く</li>
+<li>Preferences: Open User Settings(JSON)を選択し、以下のjsonを貼り付ける。</li>
+</ul>
+</li>
+</ul>
+<pre class="hljs"><code><div>{
+    <span class="hljs-attr">"[python]"</span>: {
+        <span class="hljs-attr">"editor.defaultFormatter"</span>: <span class="hljs-string">"ms-python.black-formatter"</span>,
+        <span class="hljs-attr">"editor.formatOnSave"</span>: <span class="hljs-literal">true</span>,
+        <span class="hljs-attr">"editor.codeActionsOnSave"</span>: {<span class="hljs-attr">"source.organizeImports"</span>: <span class="hljs-literal">true</span>},
+    },
+    <span class="hljs-attr">"flake8.args"</span>: [<span class="hljs-string">"--max-line-length=119"</span>],
+    <span class="hljs-attr">"isort.args"</span>: [<span class="hljs-string">"--profile"</span>, <span class="hljs-string">"black"</span>],
+    <span class="hljs-attr">"python.analysis.typeCheckingMode"</span>: <span class="hljs-string">"basic"</span>,
+}
+</div></code></pre>
+<p>TODO:blackのlength設定がうまく行ってないかも。でも動作する
+​
+​
+​</p>
+<h3 id="git">Git</h3>
+<p>​
+コードのバージョン管理ツールとしてGitを使用するので、[Git]をインストールする。
+​
+[Git]: https://git-scm.com/download/mac
+​</p>
+<ol>
+<li>Gitがインストールされているか確認する。バージョンが返ってきたらOKである。現時点での最新は<code>2.38.1</code>である。<pre class="hljs"><code><div>git --version
+</div></code></pre>
+</li>
+</ol>
+<p>​</p>
+<h2 id="aws%E3%81%A8codecommit">AWSとCodeCommit</h2>
+<p>​</p>
+<ol>
+<li><a href="https://docs.aws.amazon.com/ja_jp/cli/latest/userguide/getting-started-install.html">AWS CLI</a>をインストールする。
+​</li>
+<li>Credential の発行依頼をメンターにslackまたはメールで行い、Credential 情報をメールで受取る。access_key と書かれたファイルに Creadential 情報が含まれる。
+​</li>
+<li><a href="https://docs.aws.amazon.com/ja_jp/cli/latest/userguide/cli-configure-quickstart.html">AWS公式：aws configure を使用したクイック設定</a>を参照し、アクセスキーIDとシークレットアクセスキーの設定をAWS CLIで行う。リージョンはap-northeast-1にする。以下はサンプルである。
+​<pre class="hljs"><code><div>AWS Access Key ID [None]: AKIAIOSFODNN7EXAMPLE
+AWS Secret Access Key [None]: wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY
+Default region name [None]: ap-northeast-1
+Default output format [None]: json
+</div></code></pre>
+</li>
+</ol>
+<p>​</p>
+<ol>
+<li>以下のコマンドを実行してレポジトリ一覧が見れることを確認する。<pre class="hljs"><code><div>aws codecommit list-repositories
+</div></code></pre>
+</li>
+</ol>
+<p>​</p>
+<ol>
+<li><a href="https://docs.aws.amazon.com/ja_jp/codecommit/latest/userguide/setting-up-https-unixes.html">認証情報ヘルパーを使用したセットアップ</a>のステップ3からを行って、AWS CodeCommitリポジトリへの HTTPS 接続のセットアップを行う。セットアップが終わったら、レポジトリをcloneする。
+​
+<ol>
+<li>AWSのドキュメントにも記載されているが、以下のコマンドでレポジトリをクローンする。REPOSITORY_NAMEは<code>InternIris&lt;AWSIAMユーザー名&gt;</code>である。AWSIAMユーザー名がSatoの場合、REPOSITORY_NAMEは<code>InternIrisSato</code>となる。<pre class="hljs"><code><div>git <span class="hljs-built_in">clone</span> https://git-codecommit.ap-northeast-1.amazonaws.com/v1/repos/REPOSITORY_NAME
+</div></code></pre>
+</li>
+</ol>
+</li>
+</ol>
+<p>​
+1.  イニシャルブランチの名称をmainに変更する。
+<code>bash         git config --global init.defaultBranch main         </code>
+​
+1. <a href="https://git-scm.com/docs/gitignore">.gitignore</a>について調査し、理解する。またpython用の<a href="https://github.com/github/gitignore">.gitignore template</a>を参照し追加する。
+​
+1.  コードを書き始める。Gitの基本的な使いかたは<a href="https://backlog.com/ja/git-tutorial/">サル先生のGit入門</a>を参照する。
+​</p>
+<h3 id="git-for-macos-%E3%83%AA%E3%83%9D%E3%82%B8%E3%83%88%E3%83%AA%E3%81%B8%E3%81%AE%E3%82%A2%E3%82%AF%E3%82%BB%E3%82%B9%E3%81%8C%E6%8B%92%E5%90%A6%E3%81%95%E3%82%8C%E3%82%8B%E5%A0%B4%E5%90%88403"><a href="https://docs.aws.amazon.com/ja_jp/codecommit/latest/userguide/troubleshooting-ch.html#troubleshooting-macoshttps">Git for macOS: リポジトリへのアクセスが拒否される場合(403)</a></h3>
+<p>​</p>
+<ol>
+<li>ターミナルで<code>git config</code>コマンドを実行し、Keychain Access ユーティリティが定義されている Git 設定ファイル (gitconfig) を見つけます。ローカルシステムおよび設定によっては、複数のgitconfigファイルが存在する場合がある。
+​<pre class="hljs"><code><div>git config -l --show-origin | grep credential
+</div></code></pre>
+</li>
+</ol>
+<p>​
+このコマンドの出力で、次のような結果を検索する。
+​
+<code>bash     file:/path/to/gitconfig  credential.helper=osxkeychain     </code>
+​
+この行の先頭に示されているファイルが、編集する必要がある Git 設定ファイルである。
+​
+​</p>
+<ol>
+<li>helper = osxkeychain が含まれている認証情報セクションを削除する
+以下のコマンドでgitconfigを開き、パスを削除する。<pre class="hljs"><code><div>nano /path/to/gitconfig
+</div></code></pre>
+</li>
+</ol>
+<p>​</p>
+<ol>
+<li>Git を使用して他のリポジトリにアクセスする場合は、CodeCommit リポジトリの認証情報が提供されないように、Keychain Access ユーティリティを設定できます。Keychain Access ユーティリティを設定するには、以下のように行う
+​
+<ol>
+<li>Keychain Access ユーティリティを開く。(Finder を使用して位置を指定できます)
+​</li>
+<li>git-codecommit.ap-northeast-1.amazonaws.com を検索する。行をハイライト表示し、コンテキスト (右クリック) メニューを開いてから、[Get Info] を選択する。
+​</li>
+<li>[Access Control] タブを選択する。
+​</li>
+<li>[Confirm before allowing access] で、[git-credential-osxkeychain] を選択し、マイナス記号を選択してリストから削除する。
+​</li>
+</ol>
+</li>
+<li>適当な Git コマンドを実行しレポジトリへアクセスができることを確認する。
+例：リモートレポジトリの各ブランチの最新のコミットのIDを見る<pre class="hljs"><code><div>git ls-remote
+</div></code></pre>
+</li>
+</ol>
+<p>​
+​</p>
+<h1 id="%E3%82%B3%E3%83%BC%E3%83%87%E3%82%A3%E3%83%B3%E3%82%B0%E3%83%AB%E3%83%BC%E3%83%AB">コーディングルール</h1>
+<p>​
+基本的には<a href="https://peps.python.org/pep-0008">PEP8</a>に準拠します。VSCodeにFormatterとLinterをセットアップしたので、ここではdocStringとTypeHintについて説明します。
+​</p>
+<h2 id="docstring">Docstring</h2>
+<p>​
+DocstringにはGoogleスタイル, reStructuredTextスタイル、NumPyスタイルの3つがあります。WALCのでは<a href="https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html">Googleスタイル</a>を使用します。
+​
+​</p>
+<pre class="hljs"><code><div><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">func</span><span class="hljs-params">(arg1, arg2, arg3)</span>:</span>
+  <span class="hljs-string">"""Hello, func
+​
+  Lorem ipsum dolor sit amet,
+​
+  Args:
+    arg1 (str): First argument
+    arg2 (list[int]): Second argument
+    arg3 (dict[str, int]): Third argument
+​
+  Returns:
+    str or None: Return value
+​
+  Raises:
+    ValueError: if arg1 is empty string.
+  """</span>
+</div></code></pre>
+<p>​</p>
+<h2 id="typehints">TypeHints</h2>
+<p>​
+Python3.6からType Hintsという型アノテーションの機能が実装されました。Type Hintsを書くことで、コードの可読性が向上します。またPylanceのような静的解析ツールを使用することで、バグを事前に防ぐことができます。<a href="https://docs.python.org/3/library/typing.html">Python公式ドキュメント</a>を参考に記述してください。
+​</p>
+<pre class="hljs"><code><div><span class="hljs-function"><span class="hljs-keyword">def</span> <span class="hljs-title">f</span><span class="hljs-params">(num1: int, my_float: float = <span class="hljs-number">3.5</span>)</span> -&gt; float:</span>
+    <span class="hljs-keyword">return</span> num1 + my_float
+</div></code></pre>
+<p>​</p>
+<h3 id="typehints%E3%81%AE%E6%B3%A8%E6%84%8F%E7%82%B9">TypeHintsの注意点</h3>
+<p>​
+Python3.9以上ではTypeHintsとして組み込み関数が使用できます。Python3.7, 3.8で開発を行う場合は互換性を担保するために<a href="https://docs.python.org/3.8/library/__future__.html">futureクラス</a>を使いましょう。例えば、<code>typing.Union[int,float]</code>は<code>int|float</code>と書けます。また<code>typing.List[int]</code>も<code>list[int]</code>と書くことができます。
+​
+​</p>
+<h1 id="todo">TODO</h1>
+<p>​</p>
+<ul>
+<li>PythonとJupyterの環境構築方法</li>
+<li>Extetionの説明の追加</li>
+</ul>
+
+</body>
+</html>
