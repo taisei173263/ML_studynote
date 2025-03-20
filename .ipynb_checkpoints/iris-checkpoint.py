@@ -263,11 +263,8 @@ class AnalyzeIris:
                 plt.title(f"{model_name} Feature Importance")
 
             plt.tight_layout()
-            # ファイルに保存
-            filepath = os.path.join(self.output_dir, "feature_importances.png")
-            plt.savefig(filepath)
+            plt.savefig()
             plt.close()
-            print(f"特徴量重要度を保存しました: {filepath}")
         except Exception as e:
             print(f"特徴量重要度のプロット中にエラーが発生しました: {e}")
             return None
@@ -284,11 +281,8 @@ class AnalyzeIris:
             plt.figure(figsize=(15, 10))
             plot_tree(tree, filled=True, feature_names=self.feature_names, class_names=self.target_names)
             plt.title("Decision Tree Visualization")
-            # ファイルに保存
-            filepath = os.path.join(self.output_dir, "decision_tree.png")
-            plt.savefig(filepath)
+            plt.savefig()
             plt.close()
-            print(f"決定木を保存しました: {filepath}")
 
             return tree
         except Exception as e:
@@ -305,7 +299,7 @@ class AnalyzeIris:
                 "Original": None,
                 "MinMaxScaler": MinMaxScaler(),
                 "StandardScaler": StandardScaler(),
-                "RobustScaler": RobustScaler(),
+                "RobusScaler": RobustScaler(),
                 "Normalizer": Normalizer(),
             }
 
@@ -404,11 +398,8 @@ class AnalyzeIris:
             plt.figure(figsize=(10, 8))
             sns.scatterplot(data=df_nmf, x="NMF1", y="NMF2", hue="species", palette="viridis", s=100)
             plt.title("NMF of Iris Dataset")
-            # ファイルに保存
-            filepath = os.path.join(self.output_dir, "nmf_plot.png")
-            plt.savefig(filepath)
+            plt.savefig()
             plt.close()
-            print(f"NMF分析結果を保存しました: {filepath}")
 
             return pd.DataFrame(X_scaled, columns=self.feature_names), df_nmf, nmf
         except Exception as e:
@@ -433,11 +424,8 @@ class AnalyzeIris:
             plt.figure(figsize=(10, 8))
             sns.scatterplot(data=df_tsne, x="t-SNE1", y="t-SNE2", hue="species", palette="viridis", s=100)
             plt.title("t-SNE of Iris Dataset")
-            # ファイルに保存
-            filepath = os.path.join(self.output_dir, "tsne_plot.png")
-            plt.savefig(filepath)
+            plt.savefig()
             plt.close()
-            print(f"t-SNE分析結果を保存しました: {filepath}")
 
             return df_tsne
         except Exception as e:
@@ -516,11 +504,8 @@ class AnalyzeIris:
             plt.title("Hierarchical Clustering Dendrogram")
             plt.xlabel("Sample index")
             plt.ylabel("Distance")
-            # ファイルに保存
-            filepath = os.path.join(self.output_dir, "dendrogram.png")
-            plt.savefig(filepath)
+            plt.savefig()
             plt.close()
-            print(f"デンドログラムを保存しました: {filepath}")
 
             return linked
         except Exception as e:
@@ -558,16 +543,13 @@ class AnalyzeIris:
             cmap_custom = plt.matplotlib.colors.LinearSegmentedColormap.from_list("Custom cmap", cmaplist, cmap.N)
 
             # 散布図行列
-            g = sns.pairplot(
+            sns.pairplot(
                 df_dbscan, hue="cluster", palette=cmap_custom, plot_kws={"alpha": 0.8, "s": 80}, diag_kind="kde"
             )
             plt.suptitle("DBSCAN Clustering", y=1.02, fontsize=16)
             plt.tight_layout()
-            # ファイルに保存
-            filepath = os.path.join(self.output_dir, "dbscan_plot.png")
-            plt.savefig(filepath)
+            plt.savefig()
             plt.close()
-            print(f"DBSCAN分析結果を保存しました: {filepath}")
 
             print("Cluster Memberships:", clusters)
 
@@ -586,80 +568,18 @@ if __name__ == "__main__":
     data = analyzer.get()
     print("データを読み込みました。\n")
 
-    # メニューの表示と選択
-    while True:
-        print("\n=== Irisデータセット分析ツール ===")
-        print(" 1. 相関行列の分析")
-        print(" 2. ペアプロットの作成")
-        print(" 3. PCA分析")
-        print(" 4. K-means分析")
-        print(" 5. 教師あり学習モデルの評価")
-        print(" 6. 特徴量重要度の可視化")
-        print(" 7. 決定木の可視化")
-        print(" 8. スケーリング手法の比較")
-        print(" 9. NMF分析")
-        print("10. t-SNE分析")
-        print("11. 階層的クラスタリング")
-        print("12. DBSCAN分析")
-        print(" 0. 終了")
+    # 基本的な分析の例
+    print("相関行列を分析します:")
+    analyzer.get_correlation()
 
-        choice = input("実行する分析の番号を入力してください (0-12): ")
+    print("\nペアプロットを作成します:")
+    analyzer.pair_plot(diag_kind="kde")
 
-        if choice == "0":
-            print("プログラムを終了します。")
-            break
+    print("\nPCA分析を実行します:")
+    analyzer.plot_pca()
 
-        try:
-            choice = int(choice)
-            if choice == 1:
-                print("\n相関行列を分析します:")
-                analyzer.get_correlation()
-            elif choice == 2:
-                print("\nペアプロットを作成します:")
-                analyzer.pair_plot(diag_kind="kde")
-            elif choice == 3:
-                print("\nPCA分析を実行します:")
-                analyzer.plot_pca()
-            elif choice == 4:
-                print("\nK-means分析を実行します:")
-                analyzer.plot_k_means()
-            elif choice == 5:
-                print("\n教師あり学習モデルの評価を実行します:")
-                analyzer.all_supervised()
-                best_model, best_score = analyzer.best_supervised()
-                print(f"\n最良のモデル: {best_model}, スコア: {best_score:.3f}")
-            elif choice == 6:
-                print("\n特徴量重要度を可視化します:")
-                analyzer.plot_feature_importances_all()
-            elif choice == 7:
-                print("\n決定木を可視化します:")
-                analyzer.visualize_decision_tree()
-            elif choice == 8:
-                print("\nスケーリング手法を比較します:")
-                analyzer.plot_scaled_data()
-            elif choice == 9:
-                print("\nNMF分析を実行します:")
-                analyzer.plot_nmf()
-            elif choice == 10:
-                print("\nt-SNE分析を実行します:")
-                analyzer.plot_tsne()
-            elif choice == 11:
-                print("\n階層的クラスタリングを実行します:")
-                analyzer.plot_dendrogram()
-            elif choice == 12:
-                print("\nDBSCAN分析を実行します:")
-                analyzer.plot_dbscan(scaling=True)  # スケーリングありの方が良い結果が出やすい
-            else:
-                print("無効な選択です。0から12の数字を入力してください。")
-        except ValueError:
-            print("無効な入力です。数字を入力してください。")
-        except Exception as e:
-            print(f"エラーが発生しました: {e}")
+    print("\nクラスタリング分析を実行します:")
+    analyzer.plot_k_means()
 
-        print("\n完了しました。分析結果は以下のディレクトリに保存されています:")
-        print(os.path.abspath(analyzer.output_dir))
-
-        # 続行するか尋ねる
-        if input("\n何かキーを押して続行するか、'q'で終了します: ").lower() == "q":
-            print("プログラムを終了します。")
-            break
+    print("\n完了しました。すべての分析結果は以下のディレクトリに保存されています:")
+    print(os.path.abspath(analyzer.output_dir))
