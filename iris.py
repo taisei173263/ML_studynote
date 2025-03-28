@@ -439,7 +439,7 @@ class Visualizer:
         df = pd.DataFrame(X_transformed, columns=[f"{technique}1", f"{technique}2"])
         df["label"] = labels
 
-        if label_names:
+        if label_names is not None and len(label_names) > 0:
             df["label_name"] = [label_names[i] for i in labels]
             hue = "label_name"
         else:
@@ -456,7 +456,7 @@ class Visualizer:
             s=CONFIG["plt_params"]["scatter_size"],
         )
 
-        if technique == "PCA" and explained_variance:
+        if technique == "PCA" and explained_variance is not None:
             plt.xlabel(f"PC1 ({explained_variance[0]:.2f})")
             plt.ylabel(f"PC2 ({explained_variance[1]:.2f})")
         else:
@@ -686,14 +686,23 @@ class Visualizer:
         """
         plt.figure(figsize=(12, 8))
 
-        dendrogram(
-            linkage_matrix,
-            truncate_mode="lastp" if truncate else None,
-            p=10 if truncate else None,
-            leaf_font_size=10.0,
-            orientation="top",
-            labels=labels,
-        )
+        # truncateがTrueの場合とFalseの場合で異なるパラメータを渡す
+        if truncate:
+            dendrogram(
+                linkage_matrix,
+                truncate_mode="lastp",
+                p=10,
+                leaf_font_size=10.0,
+                orientation="top",
+                labels=labels,
+            )
+        else:
+            dendrogram(
+                linkage_matrix,
+                leaf_font_size=10.0,
+                orientation="top",
+                labels=labels,
+            )
 
         plt.title("Hierarchical Clustering Dendrogram" + (" (Truncated)" if truncate else ""))
         plt.xlabel("Sample index")
