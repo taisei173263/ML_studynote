@@ -1,7 +1,6 @@
-import logging
 import os
 from functools import wraps
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import matplotlib
 import numpy as np
@@ -28,10 +27,6 @@ from sklearn.preprocessing import MinMaxScaler, Normalizer, RobustScaler, Standa
 from sklearn.svm import SVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 
-# ロガーの設定 - INFOメッセージを非表示にするためにレベルをWARNINGに設定
-logging.basicConfig(level=logging.WARNING, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-logger = logging.getLogger(__name__)
-
 # 設定（環境変数などから読み込むように改善可能）
 CONFIG = {
     "output_dir": "output",
@@ -51,7 +46,10 @@ def error_handler(func):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            logger.error(f"{func.__name__}の実行中にエラーが発生しました: {e}", exc_info=True)
+            print(f"{func.__name__}の実行中にエラーが発生しました: {e}")
+            import traceback
+
+            traceback.print_exc()
             return None
 
     return wrapper
@@ -441,7 +439,7 @@ class Visualizer:
         df = pd.DataFrame(X_transformed, columns=[f"{technique}1", f"{technique}2"])
         df["label"] = labels
 
-        if label_names:
+        if label_names is not None and len(label_names) > 0:
             df["label_name"] = [label_names[i] for i in labels]
             hue = "label_name"
         else:
@@ -458,7 +456,7 @@ class Visualizer:
             s=CONFIG["plt_params"]["scatter_size"],
         )
 
-        if technique == "PCA" and explained_variance:
+        if technique == "PCA" and explained_variance is not None:
             plt.xlabel(f"PC1 ({explained_variance[0]:.2f})")
             plt.ylabel(f"PC2 ({explained_variance[1]:.2f})")
         else:
@@ -688,14 +686,23 @@ class Visualizer:
         """
         plt.figure(figsize=(12, 8))
 
-        dendrogram(
-            linkage_matrix,
-            truncate_mode="lastp" if truncate else None,
-            p=10 if truncate else None,
-            leaf_font_size=10.0,
-            orientation="top",
-            labels=labels,
-        )
+        # truncateがTrueの場合とFalseの場合で異なるパラメータを渡す
+        if truncate:
+            dendrogram(
+                linkage_matrix,
+                truncate_mode="lastp",
+                p=10,
+                leaf_font_size=10.0,
+                orientation="top",
+                labels=labels,
+            )
+        else:
+            dendrogram(
+                linkage_matrix,
+                leaf_font_size=10.0,
+                orientation="top",
+                labels=labels,
+            )
 
         plt.title("Hierarchical Clustering Dendrogram" + (" (Truncated)" if truncate else ""))
         plt.xlabel("Sample index")
@@ -703,6 +710,164 @@ class Visualizer:
 
         truncate_str = "_truncated" if truncate else ""
         self.file_handler.save_figure(f"dendrogram{truncate_str}.png")
+
+    def plot_scaling_fold_performance(self, fold_results: List[Dict[str, Any]], fold_idx: int) -> None:
+        """
+        フォールドごとのスケーリングパフォーマンスを可視化
+
+        Parameters
+        ----------
+        fold_results : List[Dict[str, Any]]
+            フォールドの結果リスト
+        fold_idx : int
+            フォールドのインデックス
+        """
+        plt.figure(figsize=CONFIG["plt_params"]["figure_size"])
+        for result in fold_results:
+            plt.scatter(
+                result["train_score"],
+                result["test_score"],
+                label=result["scaler"],
+                s=CONFIG["plt_params"]["scatter_size"],
+            )
+
+        self._add_performance_plot_elements(f"Scaling Methods Comparison (Fold {fold_idx + 1})")
+        self.file_handler.save_figure(f"scaling_comparison_fold_{fold_idx + 1}.png")
+        plt.close()
+
+    def plot_scaling_feature_scatter(
+        self, scaled_data: Dict[str, Dict[str, Any]], feature_pairs: List[Tuple[str, str]], y: pd.Series, fold_idx: int
+    ) -> None:
+        """
+        スケーリングされた特徴量の散布図を作成
+
+        Parameters
+        ----------
+        scaled_data : Dict[str, Dict[str, Any]]
+            スケーリングされたデータ
+        feature_pairs : List[Tuple[str, str]]
+            特徴量のペアリスト
+        y : pd.Series
+            ターゲット変数
+        fold_idx : int
+            フォールドのインデックス
+        """
+        unique_classes = np.unique(y)
+        colors = CONFIG["colors"][: len(unique_classes)]
+        markers = CONFIG["markers"][: len(unique_classes)]
+        class_colors = {cls: color for cls, color in zip(unique_classes, colors)}
+
+        for name, data in scaled_data.items():
+            n_pairs = len(feature_pairs)
+            n_cols = 5
+            n_rows = (n_pairs + n_cols - 1) // n_cols
+
+            fig, axes = plt.subplots(n_rows, n_cols, figsize=(20, 4 * n_rows))
+            axes = axes.flatten()
+
+            X = data["X_train_scaled"]
+            y_train = data["y_train"]
+
+            for i, (feature1, feature2) in enumerate(feature_pairs):
+                if i < len(axes):
+                    ax = axes[i]
+                    for cls_idx, cls in enumerate(unique_classes):
+                        mask = y_train == cls
+                        ax.scatter(
+                            X.loc[mask, feature1],
+                            X.loc[mask, feature2],
+                            c=class_colors[cls],
+                            marker=markers[cls_idx],
+                            alpha=CONFIG["plt_params"]["alpha"],
+                            s=30,
+                            label=f"Class {cls}",
+                        )
+
+                    ax.set_xlabel(feature1)
+                    ax.set_ylabel(feature2)
+                    ax.set_title(f"{feature1} vs {feature2}")
+                    ax.grid(True, alpha=0.3)
+
+                    if i == 0:
+                        ax.legend()
+
+            for j in range(i + 1, len(axes)):
+                axes[j].axis("off")
+
+            plt.tight_layout()
+            self.file_handler.save_figure(f"feature_scatter_{name}_fold_{fold_idx + 1}.png", fig=fig, dpi=150)
+            plt.close(fig)
+
+    def plot_scaling_all_folds(self, results: List[Dict[str, Any]]) -> None:
+        """
+        全フォールドのスケーリング結果をまとめて可視化
+
+        Parameters
+        ----------
+        results : List[Dict[str, Any]]
+            全フォールドの結果リスト
+        """
+        plt.figure(figsize=CONFIG["plt_params"]["figure_size"])
+        df_results = pd.DataFrame(results)
+
+        for scaler in df_results["scaler"].unique():
+            scaler_data = df_results[df_results["scaler"] == scaler]
+            plt.scatter(
+                scaler_data["train_score"],
+                scaler_data["test_score"],
+                label=scaler,
+                alpha=0.6,
+                s=CONFIG["plt_params"]["scatter_size"],
+            )
+
+        self._add_performance_plot_elements("Scaling Methods Comparison (All Folds)")
+        self.file_handler.save_figure("scaling_comparison_all_folds.png")
+
+    def _add_performance_plot_elements(self, title: str) -> None:
+        """パフォーマンスプロットの共通要素を追加"""
+        plt.plot([0.8, 1.0], [0.8, 1.0], "k--", alpha=0.3)
+        plt.xlabel("Training Score")
+        plt.ylabel("Test Score")
+        plt.title(title)
+        plt.grid(True, alpha=0.3)
+        plt.legend()
+        plt.xlim(0.8, 1.0)
+        plt.ylim(0.8, 1.0)
+
+
+class ScalingReporter:
+    """スケーリング分析結果のレポート生成を担当するクラス"""
+
+    def __init__(self, file_handler: FileHandler):
+        """
+        Parameters
+        ----------
+        file_handler : FileHandler
+            ファイル操作のためのハンドラ
+        """
+        self.file_handler = file_handler
+
+    def create_performance_summary(self, results: List[Dict[str, Any]]) -> None:
+        """パフォーマンスサマリーを作成して保存"""
+        df_results = pd.DataFrame(results)
+        summary_df = df_results.groupby("scaler").agg({"train_score": ["mean", "std"], "test_score": ["mean", "std"]})
+        summary_df.columns = ["train_mean", "train_std", "test_mean", "test_std"]
+        summary_df = summary_df.reset_index()
+        summary_df = summary_df.sort_values(by="test_mean", ascending=False)
+
+        self._print_summary(summary_df)
+        self._save_summary(summary_df)
+
+    def _print_summary(self, summary_df: pd.DataFrame) -> None:
+        """サマリーを表示"""
+        print("\n=== スケーリング手法の平均パフォーマンス ===")
+        print(summary_df.to_string(float_format=lambda x: f"{x:.3f}"))
+
+    def _save_summary(self, summary_df: pd.DataFrame) -> None:
+        """サマリーをファイルに保存"""
+        summary_path = os.path.join(self.file_handler.output_dir, "scaling_performance_summary.csv")
+        summary_df.to_csv(summary_path, index=False)
+        print(f"\n平均パフォーマンス結果を保存しました: {summary_path}")
 
 
 # モデル管理クラス
@@ -775,7 +940,7 @@ class ModelHandler:
         n_splits : int, optional
             交差検証の分割数
         model_names : List[str], optional
-            評価するモデルの名前リスト（Noneの場合は全モデル）
+            評価するモデルの名前リスト
 
         Returns
         -------
@@ -898,86 +1063,7 @@ class ModelHandler:
 
         return best_model, best_score
 
-    @error_handler
-    def compare_scaling_methods(
-        self, X: pd.DataFrame, y: pd.Series, n_splits: int = 5, model_name: str = "LinearSVC"
-    ) -> List[Dict[str, Any]]:
-        """
-        異なるスケーリング手法の比較を行う
 
-        Parameters
-        ----------
-        X : pd.DataFrame
-            特徴量データフレーム
-        y : pd.Series
-            ターゲット変数
-        n_splits : int, optional
-            交差検証の分割数
-        model_name : str, optional
-            比較に使用するモデル名
-
-        Returns
-        -------
-        List[Dict[str, Any]]
-            スケーリング結果リスト
-        """
-        if model_name not in self.model_registry:
-            print(f"モデル '{model_name}' が見つかりません")
-            return None
-
-        # 使用するスケーラーを定義
-        scalers = {
-            "Original": None,
-            "MinMaxScaler": MinMaxScaler(),
-            "StandardScaler": StandardScaler(),
-            "RobustScaler": RobustScaler(),
-            "Normalizer": Normalizer(),
-        }
-
-        # K分割交差検証
-        kf = KFold(n_splits=n_splits, shuffle=True, random_state=42)
-        results = []
-
-        for fold_idx, (train_idx, test_idx) in enumerate(kf.split(X)):
-            X_train, X_test = X.iloc[train_idx], X.iloc[test_idx]
-            y_train, y_test = y.iloc[train_idx], y.iloc[test_idx]
-
-            print("=" * 73)
-            print(f"Fold {fold_idx + 1}/{n_splits}")
-
-            for name, scaler in scalers.items():
-                # スケーリング適用
-                if scaler:
-                    X_train_scaled = scaler.fit_transform(X_train)
-                    X_test_scaled = scaler.transform(X_test)
-                else:
-                    X_train_scaled = X_train
-                    X_test_scaled = X_test
-
-                # モデル学習
-                model = self.model_registry[model_name].__class__(**self.model_registry[model_name].get_params())
-                model.fit(X_train_scaled, y_train)
-
-                # 性能評価
-                train_score = accuracy_score(y_train, model.predict(X_train_scaled))
-                test_score = accuracy_score(y_test, model.predict(X_test_scaled))
-
-                # 結果を保存
-                result = {
-                    "fold": fold_idx + 1,
-                    "scaler": name,
-                    "train_score": train_score,
-                    "test_score": test_score,
-                }
-                results.append(result)
-
-                # 結果を表示
-                print(f"{name:<14}: test score: {test_score:.3f}      train score: {train_score:.3f}")
-
-        return results
-
-
-# 分析クラス（主な機能を統合）
 class DataAnalyzer:
     """各コンポーネントを統合した分析クラス"""
 
@@ -997,6 +1083,14 @@ class DataAnalyzer:
         self.data = None
         self.X = None
         self.y = None
+
+        self.scalers = {
+            "No Scaling": None,
+            "StandardScaler": StandardScaler(),
+            "MinMaxScaler": MinMaxScaler(),
+            "RobustScaler": RobustScaler(),
+            "Normalizer": Normalizer(),
+        }
 
     def load_dataset(self, dataset_name: str, **kwargs) -> pd.DataFrame:
         """
@@ -1157,27 +1251,103 @@ class DataAnalyzer:
 
     def plot_scaled_data(self) -> pd.DataFrame:
         """
-        異なるスケーリング手法でデータを変換し比較する
+        異なるスケーリング手法でデータを変換し、LinearSVCの結果と特徴量散布図を評価する
 
         Returns
         -------
         pd.DataFrame
-            比較結果のデータフレーム
+            スケーリング結果のデータフレーム
         """
         if not self._check_data_loaded():
             return None
 
-        # スケーリング比較実行
-        results = self.model_handler.compare_scaling_methods(self.X, self.y)
+        try:
+            # 特徴量ペアの生成
+            feature_pairs = self._generate_feature_pairs()
 
-        # 各フォールドの散布図
-        for fold_idx in range(5):
-            self.visualizer.plot_scaling_comparison(results, fold_idx)
+            # スケーリング分析の実行
+            results = []
+            kf = KFold(n_splits=5, shuffle=True, random_state=42)
 
-        # 全体の散布図
-        self.visualizer.plot_scaling_comparison(results)
+            for fold_idx, (train_idx, test_idx) in enumerate(kf.split(self.X)):
+                X_train, X_test = self.X.iloc[train_idx], self.X.iloc[test_idx]
+                y_train, y_test = self.y.iloc[train_idx], self.y.iloc[test_idx]
 
-        return pd.DataFrame(results)
+                print("=" * 80)
+                print(f"Fold {fold_idx + 1}/5")
+                print("=" * 80)
+
+                fold_results = []
+                scaled_data = {}
+
+                # 各スケーラーでの評価
+                for name, scaler in self.scalers.items():
+                    # データのスケーリング
+                    if scaler:
+                        X_train_scaled = pd.DataFrame(
+                            scaler.fit_transform(X_train), columns=self.X.columns, index=X_train.index
+                        )
+                        X_test_scaled = pd.DataFrame(
+                            scaler.transform(X_test), columns=self.X.columns, index=X_test.index
+                        )
+                    else:
+                        X_train_scaled = X_train.copy()
+                        X_test_scaled = X_test.copy()
+
+                    # モデル評価
+                    model = LinearSVC(max_iter=1000, dual="auto")
+                    model.fit(X_train_scaled, y_train)
+
+                    train_score = accuracy_score(y_train, model.predict(X_train_scaled))
+                    test_score = accuracy_score(y_test, model.predict(X_test_scaled))
+
+                    result = {
+                        "fold": fold_idx + 1,
+                        "scaler": name,
+                        "train_score": train_score,
+                        "test_score": test_score,
+                    }
+                    results.append(result)
+                    fold_results.append(result)
+
+                    # スケーリングされたデータを保存
+                    scaled_data[name] = {
+                        "X_train_scaled": X_train_scaled,
+                        "y_train": y_train,
+                    }
+
+                    print(f"{name:<14}: test score: {test_score:.3f}      train score: {train_score:.3f}")
+
+                # フォールドごとのパフォーマンス散布図
+                self.visualizer.plot_scaling_fold_performance(fold_results, fold_idx)
+
+                # 特徴量散布図
+                self.visualizer.plot_scaling_feature_scatter(scaled_data, feature_pairs, y_train, fold_idx)
+
+            # 全体の結果を可視化
+            self.visualizer.plot_scaling_comparison(results)
+
+            # パフォーマンスサマリーの作成
+            scaling_reporter = ScalingReporter(self.file_handler)
+            scaling_reporter.create_performance_summary(results)
+
+            return pd.DataFrame(results)
+
+        except Exception as e:
+            print(f"スケーリングデータの評価中にエラーが発生しました: {e}")
+            import traceback
+
+            traceback.print_exc()
+            return None
+
+    def _generate_feature_pairs(self) -> List[Tuple[str, str]]:
+        """特徴量ペアの組み合わせを生成"""
+        feature_names = self.X.columns
+        return [
+            (feature_names[i], feature_names[j])
+            for i in range(len(feature_names))
+            for j in range(i + 1, len(feature_names))
+        ]
 
     def plot_pca(self, n_components: int = 2) -> Tuple[pd.DataFrame, pd.DataFrame, Any]:
         """
@@ -1379,16 +1549,32 @@ class DataAnalyzer:
         return df_dbscan
 
 
+# Irisデータセット専用の分析クラス (必要に応じてカスタマイズ可能)
+class IrisAnalyzer(DataAnalyzer):
+    """Irisデータセット専用の分析クラス"""
+
+    def load_dataset(self) -> pd.DataFrame:
+        """
+        Irisデータセットを読み込む
+
+        Returns
+        -------
+        pd.DataFrame
+            Irisデータセット
+        """
+        return super().load_dataset("iris")
+
+
 # メイン処理
 def main():
     """Irisデータセット分析プログラムのメイン処理"""
     print("Irisデータセット分析プログラムを実行します")
 
     # データ分析オブジェクト作成
-    analyzer = DataAnalyzer(output_dir="output")
+    analyzer = IrisAnalyzer(output_dir="output")
 
     # データセット読み込み
-    data = analyzer.load_dataset("iris")
+    data = analyzer.load_dataset()
     print("データ読み込み完了")
     print("\n" + str(data.head(20)))  # 最初の20行を表示
 
