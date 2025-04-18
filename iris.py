@@ -19,6 +19,7 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import MinMaxScaler, Normalizer, RobustScaler, StandardScaler
 from sklearn.svm import SVC, LinearSVC
 from sklearn.tree import DecisionTreeClassifier
+import os
 
 
 class AnalyzeIris:
@@ -42,10 +43,10 @@ class AnalyzeIris:
         self.target_names = data_iris.target_names
 
         # Initialize storage for supervised learning results
-        self.results_supervised = None
+        self.results_supervised = None      #4/17型の指定df_result 抽象度が高い順に書く
 
         # Initialize X_scaled as a DataFrame to support head() method
-        self.X_scaled = pd.DataFrame(columns=self.df.drop("Label", axis=1).columns)
+        self.X_scaled = pd.DataFrame(columns=self.df.drop("Label", axis=1).columns) #saikakuninn4/17
 
     def get(self):
         """Return the dataset."""
@@ -97,7 +98,7 @@ class AnalyzeIris:
             return None
         return self.X_scaled
 
-    def all_supervised(self, n_neighbors=4, random_state=42):
+    def all_supervised(self, n_neighbors=4, random_state=42):#randomseedの統一4/17
         """
         Run multiple supervised learning algorithms on the dataset using k-fold
         cross-validation and display results.
@@ -143,6 +144,7 @@ class AnalyzeIris:
             fold_scores = []
 
             # Run KFold cross-validation
+            #self_index ir self_index4/17
             for i, (train_index, test_index) in enumerate(kf.split(X)):
                 X_train, X_test = X[train_index], X[test_index]
                 y_train, y_test = y[train_index], y[test_index]
@@ -168,11 +170,11 @@ class AnalyzeIris:
         self.results_supervised = results_df
 
         # Find best method
-        best_method = max(results, key=results.get)
+        best_method = max(results, key=results.get)#4/17
         best_score = results[best_method]
         print(f"BestMethod is {best_method} : {best_score:.4f}")
 
-        return results
+        return results #dict_results#4/17
 
     def get_supervised(self):
         """
@@ -222,7 +224,7 @@ class AnalyzeIris:
         # Define tree-based models
         models = {
             "DecisionTreeClassifier": DecisionTreeClassifier(random_state=42),
-            "RandomForestClassifier": RandomForestClassifier(random_state=42),
+            "RandomForestClassifier": RandomForestClassifier(random_state=42),#4/17
             "GradientBoostingClassifier": GradientBoostingClassifier(random_state=42),
         }
 
@@ -298,11 +300,11 @@ class AnalyzeIris:
             "StandardScaler": (0.967, 0.942),
             "RobusScaler": (0.967, 0.933),
             "Normalizer": (0.900, 0.908),
-        }
+        }#naosu4/17 irisを使わない　
 
         # Print the scores exactly as requested
         for scaler_name, (test_score, train_score) in fixed_results.items():
-            print(f"{scaler_name} : test score: {test_score:.3f} train score: {train_score:.3f}")
+            print(f"{scaler_name} : test score: {test_score:.3f} train score: {train_score:.3f}")#4/17
 
         # Define KFold for 5-fold cross-validation
         kf = KFold(n_splits=5, shuffle=True, random_state=42)
@@ -311,8 +313,13 @@ class AnalyzeIris:
         fold_counter = 0
 
         # Define feature pairs for scatter plots
-        feature_pairs = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
+        feature_pairs = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]#4/17 特徴りょう増えても対応できるように
         feature_names = self.df.columns[:-1]  # Exclude Label column
+        
+        # Create output directory if it doesn't exist
+        output_dir = "scaled_data_plots"#4/17
+        os.makedirs(output_dir, exist_ok=True)
+        print(f"Saving plots to {os.path.abspath(output_dir)}")
 
         # For each fold
         for train_index, test_index in kf.split(X):
@@ -320,7 +327,7 @@ class AnalyzeIris:
             print(f"\nFold {fold_counter} of 5:")
 
             X_train, X_test = X[train_index], X[test_index]
-            y_train, y_test = y[train_index], y[test_index]
+            y_train, y_test = y[train_index], y[test_index]#4/17使われていない見直し
 
             # Create a 6×5 grid: rows=feature pairs (6), columns=scaling methods (5)
             num_rows = len(feature_pairs)  # 6 feature pairs (rows)
@@ -330,31 +337,25 @@ class AnalyzeIris:
             fig.suptitle(f"Fold {fold_counter}: Feature Comparisons with Different Scaling Methods", fontsize=16)
 
             # For each feature pair (rows)
-            for i, (f1, f2) in enumerate(feature_pairs):
+            for i, (f1, f2) in enumerate(feature_pairs):#fは何4/17
                 # For each scaling method (columns)
                 for j, (scaler_name, scaler) in enumerate(scalers.items()):
                     # Get the current axis
                     ax = axes[i, j]
 
-                # Apply scaling
-                if scaler is not None:
-                    X_train_scaled = scaler.fit_transform(X_train)
-                else:
-                    X_train_scaled = X_train.copy()
+                    # Apply scaling
+                    if scaler is not None:
+                        X_train_scaled = scaler.fit_transform(X_train)
+                        X_test_scaled = scaler.transform(X_test)
+                    else:
+                        X_train_scaled = X_train.copy()
+                        X_test_scaled = X_test.copy()
 
-                    # Plot all points as blue circles
-                    ax.scatter(X_train_scaled[:, f1], X_train_scaled[:, f2], c="blue", alpha=0.7, marker="o")
+                    # Plot training points as blue circles
+                    ax.scatter(X_train_scaled[:, f1], X_train_scaled[:, f2], c="blue", alpha=0.7, marker="o", label="Training")
 
-                    # Add some red triangles (fixed indices for reproducibility)
-                    np.random.seed(42 + fold_counter)  # Ensure different random points per fold
-                    random_indices = np.random.choice(len(y_train), 5, replace=False)
-                    ax.scatter(
-                        X_train_scaled[random_indices, f1],
-                        X_train_scaled[random_indices, f2],
-                        marker="^",
-                        c="red",
-                        s=50,
-                    )
+                    # Plot test points as red triangles
+                    ax.scatter(X_test_scaled[:, f1], X_test_scaled[:, f2], c="red", alpha=0.7, marker="^", label="Test", s=50)
 
                     # Add labels
                     ax.set_xlabel(f"{feature_names[f1]}")
@@ -365,7 +366,7 @@ class AnalyzeIris:
                         ax.set_title(scaler_name)
 
                     # Add feature pair label to leftmost column
-                    if j == 0:
+                    if j == 0:#4/17ここらへん見にくい　
                         ax.text(
                             -0.2,
                             0.5,
@@ -374,14 +375,28 @@ class AnalyzeIris:
                             rotation=90,
                             verticalalignment="center",
                         )
+                        
+                    # Add legend to the first subplot only
+                    if i == 0 and j == 0:
+                        ax.legend(loc="best", fontsize=8)
 
-                    plt.tight_layout()
+            plt.tight_layout()
             plt.subplots_adjust(top=0.95, left=0.1)
+            
+            # Save the figure
+            filename = os.path.join(output_dir, f"fold_{fold_counter}_scaled_data.png")#4/17
+            plt.savefig(filename, dpi=100, bbox_inches='tight')
+            print(f"Saved plot to {filename}")
+            
+            # Show the plot
             plt.show()
+            
+            # Close the figure to free memory
+            plt.close(fig)
 
         return fixed_results
 
-    def plot_pca(self, n_components=2):
+    def plot_pca(self, n_components=2):#4/17 nmfと混ぜてみる
         """
         Apply PCA to the dataset and plot the results.
 
@@ -708,7 +723,7 @@ class AnalyzeIris:
         plt.tight_layout()
         plt.show()
 
-    def plot_dbscan(self, eps=0.5, min_samples=5, scaling=False):
+    def plot_dbscan(self, eps=0.5, min_samples=5, scaling=False):#チューニング4/17
         """
         Apply DBSCAN clustering to the dataset and plot the results.
 
@@ -756,7 +771,7 @@ class AnalyzeIris:
         plt.figure(figsize=(10, 8))
 
         # Choose features for visualization (petal length vs petal width)
-        feature1, feature2 = 2, 3
+        feature1, feature2 = 2, 3#4/17
 
         # Plot points
         colors = ["red", "blue", "green", "purple", "orange", "cyan"]
