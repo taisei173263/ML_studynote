@@ -511,6 +511,98 @@ class DataAnalyzer:
 
         return dict_scaler_results
 
+    def _plot_dimension_reduction(self, model, n_components, scaler, method_name):
+        """
+        Apply dimension reduction to the dataset and plot the results.
+
+        Parameters:
+        -----------
+        model : object
+            The dimension reduction model (PCA or NMF)
+        n_components : int
+            Number of components to keep
+        scaler : object
+            The scaler to use (StandardScaler or MinMaxScaler)
+        method_name : str
+            The name of the method (PCA or NMF)
+
+        Returns:
+        --------
+        tuple: (X_scaled, df_result, model)
+            X_scaled : The scaled data
+            df_result : DataFrame with dimension reduction results
+            model : The fitted model
+        """
+        # Prepare data
+        X_features = self.df_data.drop("Label", axis=1).values
+        y_labels = self.df_data["Label"].values
+
+        # Apply scaling
+        X_scaled = scaler.fit_transform(X_features)
+
+        # Create DataFrame for scaled data if it's PCA
+        if method_name == "PCA":
+            self.df_scaled_features = pd.DataFrame(X_scaled, columns=self.df_data.drop("Label", axis=1).columns)
+
+            # Display scaled data information
+            print("\nスケーリング後のデータ (先頭5行):")
+            print(self.df_scaled_features.head())
+            print("\nスケーリング後のデータ統計情報:")
+            print(self.df_scaled_features.describe())
+
+        # Apply dimension reduction
+        random_seed = 42
+        if hasattr(model, "random_state"):
+            model.random_state = random_seed
+        X_result = model.fit_transform(X_scaled)
+
+        # Display components if it's PCA
+        if method_name == "PCA":
+            print("components_")
+            print(model.components_)
+
+        # Create dataframe with results
+        df_result = pd.DataFrame(X_result, columns=[f"Component {i+1}" for i in range(n_components)])
+        df_result["Label"] = y_labels
+
+        # Plot results
+        plt.figure(figsize=(10, 8))
+        colors = ["blue", "orange", "green"]
+        markers = ["o", "^", "v"]
+
+        for i, target_name in enumerate(self.target_names):
+            mask = df_result["Label"] == i
+            plt.scatter(
+                df_result.loc[mask, "Component 1"],
+                df_result.loc[mask, "Component 2"],
+                c=colors[i],
+                marker=markers[i],
+                label=target_name,
+            )
+
+        plt.xlabel("First component")
+        plt.ylabel("Second component")
+        plt.legend()
+        plt.show()
+
+        # Plot component heatmap
+        feature_names = self.df_data.drop("Label", axis=1).columns
+        plt.figure(figsize=(10, 5))
+        components = pd.DataFrame(
+            model.components_, columns=feature_names, index=["First component", "Second component"]
+        )
+
+        sns.heatmap(components, cmap="viridis")
+        plt.xlabel("Feature")
+        plt.ylabel(f"{method_name} components")
+        plt.tight_layout()
+        plt.show()
+
+        if method_name == "PCA":
+            return self.df_scaled_features, df_result, model
+        else:
+            return X_scaled, df_result, model
+
     def plot_pca(self, n_components=2):
         """
         Apply PCA to the dataset and plot the results.
@@ -527,70 +619,9 @@ class DataAnalyzer:
             df_pca : DataFrame with PCA results
             pca_model : The fitted PCA model
         """
-        # Prepare data
-        X_features = self.df_data.drop("Label", axis=1).values
-        y_labels = self.df_data["Label"].values
-
-        # Apply scaling
         scaler = StandardScaler()
-        X_scaled_array = scaler.fit_transform(X_features)
-
-        # Create DataFrame for scaled data and store it as a class property
-        self.df_scaled_features = pd.DataFrame(X_scaled_array, columns=self.df_data.drop("Label", axis=1).columns)
-
-        # Display scaled data information
-        print("\nスケーリング後のデータ (先頭5行):")
-        print(self.df_scaled_features.head())
-        print("\nスケーリング後のデータ統計情報:")
-        print(self.df_scaled_features.describe())
-
-        # Apply PCA with consistent random seed
-        random_seed = 42
-        pca = PCA(n_components=n_components, random_state=random_seed)
-        X_pca = pca.fit_transform(X_scaled_array)
-
-        # Display only PCA components directly
-        print("components_")
-        print(pca.components_)
-
-        # Create dataframe with PCA results
-        df_pca = pd.DataFrame(X_pca, columns=[f"Component {i+1}" for i in range(n_components)])
-        df_pca["Label"] = y_labels
-
-        # Plot PCA results
-        plt.figure(figsize=(10, 8))
-        colors = ["blue", "orange", "green"]
-        markers = ["o", "^", "v"]
-
-        for i, target_name in enumerate(self.target_names):
-            mask = df_pca["Label"] == i
-            plt.scatter(
-                df_pca.loc[mask, "Component 1"],
-                df_pca.loc[mask, "Component 2"],
-                c=colors[i],
-                marker=markers[i],
-                label=target_name,
-            )
-
-        plt.xlabel("First component")
-        plt.ylabel("Second component")
-        plt.legend()
-        plt.show()
-
-        # Plot component heatmap
-        feature_names = self.df_data.drop("Label", axis=1).columns
-        plt.figure(figsize=(10, 5))
-        components = pd.DataFrame(
-            pca.components_, columns=feature_names, index=["First component", "Second component"]
-        )
-
-        sns.heatmap(components, cmap="viridis")
-        plt.xlabel("Feature")
-        plt.ylabel("PCA components")
-        plt.tight_layout()
-        plt.show()
-
-        return self.df_scaled_features, df_pca, pca
+        pca = PCA(n_components=n_components)
+        return self._plot_dimension_reduction(pca, n_components, scaler, "PCA")
 
     def plot_nmf(self, n_components=2):
         """
@@ -608,57 +639,9 @@ class DataAnalyzer:
             df_nmf : DataFrame with NMF results
             nmf_model : The fitted NMF model
         """
-        # Prepare data
-        X_features = self.df_data.drop("Label", axis=1).values
-        y_labels = self.df_data["Label"].values
-
-        # Apply scaling - NMF requires non-negative values
         scaler = MinMaxScaler()
-        X_scaled = scaler.fit_transform(X_features)
-
-        # Apply NMF
-        random_seed = 42
-        nmf = NMF(n_components=n_components, random_state=random_seed)
-        X_nmf = nmf.fit_transform(X_scaled)
-
-        # Create dataframe with NMF results
-        df_nmf = pd.DataFrame(X_nmf, columns=[f"Component {i+1}" for i in range(n_components)])
-        df_nmf["Label"] = y_labels
-
-        # Plot NMF results
-        plt.figure(figsize=(10, 8))
-        colors = ["blue", "orange", "green"]
-        markers = ["o", "^", "v"]
-
-        for i, target_name in enumerate(self.target_names):
-            mask = df_nmf["Label"] == i
-            plt.scatter(
-                df_nmf.loc[mask, "Component 1"],
-                df_nmf.loc[mask, "Component 2"],
-                c=colors[i],
-                marker=markers[i],
-                label=target_name,
-            )
-
-        plt.xlabel("First component")
-        plt.ylabel("Second component")
-        plt.legend()
-        plt.show()
-
-        # Plot component heatmap
-        feature_names = self.df_data.drop("Label", axis=1).columns
-        plt.figure(figsize=(10, 5))
-        components = pd.DataFrame(
-            nmf.components_, columns=feature_names, index=["First component", "Second component"]
-        )
-
-        sns.heatmap(components, cmap="viridis")
-        plt.xlabel("Feature")
-        plt.ylabel("NMF components")
-        plt.tight_layout()
-        plt.show()
-
-        return X_scaled, df_nmf, nmf
+        nmf = NMF(n_components=n_components)
+        return self._plot_dimension_reduction(nmf, n_components, scaler, "NMF")
 
     def plot_tsne(self, perplexity=30, random_seed=42):
         """
