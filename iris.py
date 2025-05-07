@@ -8,7 +8,7 @@ import pandas as pd
 import seaborn as sns
 
 # すべてのprint出力を省略せずに表示
-from IPython.core.getipython import get_ipython
+from IPython.core.interactiveshell import InteractiveShell
 from scipy.cluster.hierarchy import dendrogram, linkage
 from sklearn import tree
 from sklearn.cluster import DBSCAN, KMeans
@@ -74,7 +74,7 @@ class DataAnalyzer:
         plt.show()
         plt.close()
 
-    def all_supervised(self, n_neighbors=4):
+    def all_supervised(self, n_neighbors=4):  # 分類時に考慮する「近傍点の数」を指定
         """
         Run multiple supervised learning algorithms on the dataset using k-fold
         cross-validation and display results.
@@ -167,9 +167,9 @@ class DataAnalyzer:
             best_score = results_mean.max()
             return best_method, best_score
         else:
-            return None, 0.0
+            return None, 0.0  # 最良の手法が見つからなかった（エラーケース）,スコアも同様にエラーケースとして0.0を返す
 
-    def plot_feature_importances_all(self):
+    def plot_feature_importances_all(self):  # 決定木モデルの特徴量重要性をプロット
         """
         Plot feature importances for tree-based models.
 
@@ -179,7 +179,7 @@ class DataAnalyzer:
         """
         X_features = self.df_data.drop("Label", axis=1).values
         y_labels = self.df_data["Label"].values
-        feature_names = list(self.df_data.drop("Label", axis=1).columns)
+        feature_names = list(self.df_data.drop("Label", axis=1).columns)  # 特徴量の名前を取得
 
         tree_models = {
             "DecisionTreeClassifier": DecisionTreeClassifier(random_state=self.RANDOM_SEED),
@@ -204,8 +204,8 @@ class DataAnalyzer:
         --------
         decision_tree: The trained decision tree model
         """
-        X_features = self.df_data.drop("Label", axis=1).values
-        y_labels = self.df_data["Label"].values.astype(int)
+        X_features = self.df_data.drop("Label", axis=1).values  # 特徴量の値を取得
+        y_labels = self.df_data["Label"].values.astype(int)  # ラベルの値を取得
 
         decision_tree = DecisionTreeClassifier(random_state=self.RANDOM_SEED)
         decision_tree.fit(X_features, y_labels)
@@ -303,7 +303,7 @@ class DataAnalyzer:
 
         return dict_scaler_results
 
-    def _print_fold_results(self, fold_results, scalers):
+    def _print_fold_results(self, fold_results, scalers):  # フォールド別結果と最終平均結果を表示するヘルパーメソッド
         """フォールド別結果と最終平均結果を表示するヘルパーメソッド"""
         # フォールド別結果
         print("\n=== Fold-by-Fold Results ===")
@@ -393,7 +393,9 @@ class DataAnalyzer:
             plt.show()
             plt.close(fig)
 
-    def _plot_dimension_reduction(self, model, n_components, scaler, method_name):
+    def _plot_dimension_reduction(
+        self, model, n_components, scaler, method_name
+    ):  # 次元削減を適用して結果をプロットするヘルパーメソッド
         """
         Apply dimension reduction to the dataset and plot the results.
 
@@ -419,21 +421,24 @@ class DataAnalyzer:
         y_labels = self.df_data["Label"].values
         X_scaled = scaler.fit_transform(X_features)
 
+        # random_stateの設定（共通処理）
+        if hasattr(model, "random_state"):
+            model.random_state = self.RANDOM_SEED
+
+        # モデルの適用（共通処理）
+        X_result = model.fit_transform(X_scaled)
+
+        # PCA特有の処理
         if method_name == "PCA":
             self.df_scaled_features = pd.DataFrame(X_scaled, columns=self.df_data.drop("Label", axis=1).columns)
             print("\nスケーリング後のデータ (先頭5行):")
             print(self.df_scaled_features.head())
             print("\nスケーリング後のデータ統計情報:")
             print(self.df_scaled_features.describe())
-
-        if hasattr(model, "random_state"):
-            model.random_state = self.RANDOM_SEED
-        X_result = model.fit_transform(X_scaled)
-
-        if method_name == "PCA":
             print("components_")
             print(model.components_)
 
+        # 以下、共通の可視化処理
         df_result = pd.DataFrame(X_result, columns=[f"Component {i+1}" for i in range(n_components)])
         df_result["Label"] = y_labels
 
@@ -468,12 +473,9 @@ class DataAnalyzer:
         plt.tight_layout()
         plt.show()
 
-        if method_name == "PCA":
-            return self.df_scaled_features, df_result, model
-        else:
-            return X_scaled, df_result, model
+        return (self.df_scaled_features, df_result, model) if method_name == "PCA" else (X_scaled, df_result, model)
 
-    def plot_pca(self, n_components=2):
+    def plot_pca(self, n_components=2):  # PCAを適用して結果をプロットするメソッド
         """
         Apply PCA to the dataset and plot the results.
 
@@ -489,9 +491,11 @@ class DataAnalyzer:
             df_pca : DataFrame with PCA results
             pca_model : The fitted PCA model
         """
-        return self._plot_dimension_reduction(PCA(n_components=n_components), n_components, StandardScaler(), "PCA")
+        return self._plot_dimension_reduction(
+            PCA(n_components=n_components), n_components, StandardScaler(), "PCA"
+        )  # PCAを適用して結果をプロットするメソッド
 
-    def plot_nmf(self, n_components=2):
+    def plot_nmf(self, n_components=2):  # NMFを適用して結果をプロットするメソッド
         """
         Apply NMF to the dataset and plot the results.
 
@@ -509,7 +513,7 @@ class DataAnalyzer:
         """
         return self._plot_dimension_reduction(NMF(n_components=n_components), n_components, MinMaxScaler(), "NMF")
 
-    def plot_tsne(self, perplexity=30):
+    def plot_tsne(self, perplexity=30):  # t-SNEを適用して結果をプロットするメソッド
         """
         Apply t-SNE to the dataset and plot the results with numeric labels.
 
@@ -553,7 +557,7 @@ class DataAnalyzer:
         print("t-SNE visualization completed.")
         print("If plot is not visible, run '%matplotlib inline' in a cell first.")
 
-    def plot_k_means(self, n_clusters=3):
+    def plot_k_means(self, n_clusters=3):  # K-meansクラスタリングを適用して結果をプロットするメソッド
         """
         Apply K-means clustering to the dataset and plot the results.
 
@@ -628,7 +632,7 @@ class DataAnalyzer:
 
         return kmeans
 
-    def plot_dendrogram(self, truncate=False):
+    def plot_dendrogram(self, truncate=False):  # 階層型クラスタリングを適用して結果をプロットするメソッド
         """
         Plot a dendrogram of the dataset using hierarchical clustering.
 
@@ -652,7 +656,7 @@ class DataAnalyzer:
         plt.tight_layout()
         plt.show()
 
-    def plot_dbscan(self, eps=0.5, min_samples=5, scaling=False):
+    def plot_dbscan(self, eps=0.5, min_samples=5, scaling=False):  # DBSCANを適用して結果をプロットするメソッド
         """
         Apply DBSCAN clustering to the dataset and plot the results.
 
@@ -681,14 +685,14 @@ class DataAnalyzer:
         print("\nCluster Statistics:")
         unique_clusters, counts = np.unique(y_pred, return_counts=True)
         for cluster, count in zip(unique_clusters, counts):
-            cluster_name = "Noise" if cluster == -1 else f"Cluster {cluster}"
+            cluster_name = "Noise" if cluster == -1 else f"Cluster {cluster}"  # -1はノイズクラスターを表す
             print(f"{cluster_name}: {count} samples")
 
         plt.figure(figsize=(10, 8))
         colors = ["red", "blue", "green", "purple", "orange", "cyan"]
         feature_index1, feature_index2 = 2, 3
 
-        for cluster in np.unique(y_pred):
+        for cluster in np.unique(y_pred):  # ユニークなクラスターを取得
             mask = y_pred == cluster
             c = "black" if cluster == -1 else colors[cluster % len(colors)]
             label = "Noise" if cluster == -1 else f"Cluster {cluster}"
