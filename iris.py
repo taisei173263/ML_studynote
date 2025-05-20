@@ -428,16 +428,6 @@ class DataAnalyzer:
         # モデルの適用（共通処理）
         X_result = model.fit_transform(X_scaled)
 
-        # PCA特有の処理
-        if method_name == "PCA":
-            self.df_scaled_features = pd.DataFrame(X_scaled, columns=self.df_data.drop("Label", axis=1).columns)
-            print("\nスケーリング後のデータ (先頭5行):")
-            print(self.df_scaled_features.head())
-            print("\nスケーリング後のデータ統計情報:")
-            print(self.df_scaled_features.describe())
-            print("components_")
-            print(model.components_)
-
         # 以下、共通の可視化処理
         df_result = pd.DataFrame(X_result, columns=[f"Component {i+1}" for i in range(n_components)])
         df_result["Label"] = y_labels
@@ -473,7 +463,33 @@ class DataAnalyzer:
         plt.tight_layout()
         plt.show()
 
-        return (self.df_scaled_features, df_result, model) if method_name == "PCA" else (X_scaled, df_result, model)
+        return X_scaled, df_result, model
+
+    def _pca_additional_info(self, X_scaled, model):
+        """
+        Display additional information specific to PCA.
+
+        Parameters:
+        -----------
+        X_scaled : array-like
+            The scaled data
+        model : PCA
+            The fitted PCA model
+
+        Returns:
+        --------
+        pd.DataFrame: Scaled features dataframe
+        """
+        # PCA特有の表示処理
+        self.df_scaled_features = pd.DataFrame(X_scaled, columns=self.df_data.drop("Label", axis=1).columns)
+        print("\nスケーリング後のデータ (先頭5行):")
+        print(self.df_scaled_features.head())
+        print("\nスケーリング後のデータ統計情報:")
+        print(self.df_scaled_features.describe())
+        print("components_")
+        print(model.components_)
+
+        return self.df_scaled_features
 
     def plot_pca(self, n_components=2):  # PCAを適用して結果をプロットするメソッド
         """
@@ -491,9 +507,12 @@ class DataAnalyzer:
             df_pca : DataFrame with PCA results
             pca_model : The fitted PCA model
         """
-        return self._plot_dimension_reduction(
-            PCA(n_components=n_components), n_components, StandardScaler(), "PCA"
-        )  # PCAを適用して結果をプロットするメソッド
+        scaler = StandardScaler()
+        pca_model = PCA(n_components=n_components)
+        X_scaled, df_result, model = self._plot_dimension_reduction(pca_model, n_components, scaler, "PCA")
+        df_scaled_features = self._pca_additional_info(X_scaled, model)
+
+        return df_scaled_features, df_result, pca_model
 
     def plot_nmf(self, n_components=2):  # NMFを適用して結果をプロットするメソッド
         """
@@ -715,5 +734,15 @@ if __name__ == "__main__":
     # Call the plot_scaled_data() method with the exact output formatting
 
 
-# Create an alias for DataAnalyzer as AnalyzeIris for backward compatibility
-AnalyzeIris = DataAnalyzer
+# 明示的なクラス定義で、DataAnalyzerを継承したIrisAnalyzerクラスを作成
+class IrisAnalyzer(DataAnalyzer):
+    """
+    A class for analyzing the Iris dataset with various machine learning techniques.
+    This class extends DataAnalyzer with specific functionality for the Iris dataset.
+    """
+
+    pass
+
+
+# 後方互換性のために、AnalyzeIrisという名前も維持
+AnalyzeIris = IrisAnalyzer
