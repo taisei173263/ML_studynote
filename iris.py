@@ -226,7 +226,7 @@ class DataAnalyzer:
     def plot_scaled_data(self):
         """
         Plot the dataset with different scaling methods and evaluate LinearSVC performance.
-        Shows scatter plots for all feature pairs with different scaling methods for each fold.
+        Shows scores and scatter plots for each fold in sequence (1fold score -> 1fold plot -> 2fold score -> ...).
 
         Returns:
         --------
@@ -252,18 +252,30 @@ class DataAnalyzer:
         dict_scaler_results = {}
         fold_results = {scaler_name: [] for scaler_name in scalers.keys()}
 
-        # 各スケーラーでの評価
-        for scaler_name, scaler in scalers.items():
-            fold_test_scores = []
-            fold_train_scores = []
-            print(f"\n=== {scaler_name} ===")
+        # 特徴量ペアの生成
+        feature_pairs = list(itertools.combinations(range(num_features), 2))
+        print(f"\nGenerated {len(feature_pairs)} feature pairs for {num_features} features")
 
-            # 各フォールドでの評価
-            for fold_idx, (index_train, index_test) in enumerate(kf.split(X_features)):
-                # データ分割
-                X_train, X_test = X_features[index_train], X_features[index_test]
-                y_train, y_test = y_labels[index_train], y_labels[index_test]
+        # 特徴量ペアのリスト表示
+        print("Feature pairs to be plotted:")
+        for idx, (i, j) in enumerate(feature_pairs):
+            print(f"Pair {idx+1}: {feature_names[i]} vs {feature_names[j]}")
 
+        # 各フォールドの処理（スコア→散布図を交互に表示）
+        fold_indices = list(kf.split(X_features))
+
+        for fold_idx, (index_train, index_test) in enumerate(fold_indices):
+            print(f"\n=== Fold {fold_idx+1} of 5 ===")
+            X_train, X_test = X_features[index_train], X_features[index_test]
+            y_train, y_test = y_labels[index_train], y_labels[index_test]
+
+            # 1. このフォールドの各スケーラーでのスコアを計算・表示
+            print("\nScaler Results:")
+            print("-" * 80)
+            print(f"{'Scaler':<15} {'Test Score':<12} {'Train Score':<12}")
+            print("-" * 80)
+
+            for scaler_name, scaler in scalers.items():
                 # スケーリング
                 X_train_scaled = scaler.fit_transform(X_train) if scaler else X_train.copy()
                 X_test_scaled = scaler.transform(X_test) if scaler else X_test.copy()
@@ -274,68 +286,11 @@ class DataAnalyzer:
                 train_score = classifier.score(X_train_scaled, y_train)
                 test_score = classifier.score(X_test_scaled, y_test)
 
-                # 結果の記録
-                print(f"  Fold {fold_idx+1}: test score: {test_score:.3f}, train score: {train_score:.3f}")
-                fold_test_scores.append(test_score)
-                fold_train_scores.append(train_score)
+                # 結果の記録と表示
+                print(f"{scaler_name:<15} {test_score:.4f}       {train_score:.4f}")
                 fold_results[scaler_name].append((test_score, train_score))
 
-            # 平均スコアの計算と表示
-            avg_test_score = np.mean(fold_test_scores)
-            avg_train_score = np.mean(fold_train_scores)
-            dict_scaler_results[scaler_name] = (avg_test_score, avg_train_score)
-            print(f"  Average: test score: {avg_test_score:.3f} train score: {avg_train_score:.3f}")
-
-        # フォールド別結果の表示
-        self._print_fold_results(fold_results, scalers)
-
-        # 特徴量ペアの生成
-        feature_pairs = list(itertools.combinations(range(num_features), 2))
-        print(f"\nGenerated {len(feature_pairs)} feature pairs for {num_features} features")
-
-        # 特徴量ペアのリスト表示
-        print("Feature pairs to be plotted:")
-        for idx, (i, j) in enumerate(feature_pairs):
-            print(f"Pair {idx+1}: {feature_names[i]} vs {feature_names[j]}")
-
-        # 各フォールドでの可視化
-        self._visualize_folds(kf, X_features, feature_pairs, scalers, feature_names)
-
-        return dict_scaler_results
-
-    def _print_fold_results(self, fold_results, scalers):  # フォールド別結果と最終平均結果を表示するヘルパーメソッド
-        """フォールド別結果と最終平均結果を表示するヘルパーメソッド"""
-        # フォールド別結果
-        print("\n=== Fold-by-Fold Results ===")
-        for fold_idx in range(5):
-            print(f"\nFold {fold_idx+1} Results:")
-            print("-" * 80)
-            print(f"{'Scaler':<15} {'Test Score':<12} {'Train Score':<12}")
-            print("-" * 80)
-            for scaler_name in scalers.keys():
-                test_score, train_score = fold_results[scaler_name][fold_idx]
-                print(f"{scaler_name:<15} {test_score:.4f}       {train_score:.4f}")
-
-        # 最終平均結果
-        print("\n=== Final Average Results ===")
-        print("-" * 80)
-        print(f"{'Scaler':<15} {'Test Score':<12} {'Train Score':<12}")
-        print("-" * 80)
-
-        # 平均スコアの計算と表示
-        for scaler_name in scalers.keys():
-            scores = fold_results[scaler_name]
-            avg_test = np.mean([s[0] for s in scores])
-            avg_train = np.mean([s[1] for s in scores])
-            print(f"{scaler_name:<15} {avg_test:.4f}       {avg_train:.4f}")
-
-    def _visualize_folds(self, kf, X_features, feature_pairs, scalers, feature_names):
-        """各フォールドでの特徴量ペアの可視化を行うヘルパーメソッド"""
-        # 各フォールドの特徴量ペア散布図
-        for fold_idx, (index_train, index_test) in enumerate(kf.split(X_features)):
-            print(f"\nFold {fold_idx+1} of 5:")
-            X_train, X_test = X_features[index_train], X_features[index_test]
-
+            # 2. このフォールドの散布図を表示
             # グリッド作成
             num_rows = len(feature_pairs)
             num_cols = len(scalers)
@@ -392,6 +347,22 @@ class DataAnalyzer:
             plt.subplots_adjust(top=0.95, left=0.1)
             plt.show()
             plt.close(fig)
+
+        # 最終結果のサマリー表示
+        print("\n=== Final Average Results ===")
+        print("-" * 80)
+        print(f"{'Scaler':<15} {'Test Score':<12} {'Train Score':<12}")
+        print("-" * 80)
+
+        # 平均スコアの計算と表示
+        for scaler_name in scalers.keys():
+            scores = fold_results[scaler_name]
+            avg_test = np.mean([s[0] for s in scores])
+            avg_train = np.mean([s[1] for s in scores])
+            dict_scaler_results[scaler_name] = (avg_test, avg_train)
+            print(f"{scaler_name:<15} {avg_test:.4f}       {avg_train:.4f}")
+
+        return dict_scaler_results
 
     def _plot_dimension_reduction(
         self, model, n_components, scaler, method_name
